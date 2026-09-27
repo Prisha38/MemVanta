@@ -1,0 +1,35 @@
+name: Publish MemVanta Hugging Face Space
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish-space:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build Space evidence payload
+        run: python huggingface/build_space.py
+
+      - name: Install Hugging Face CLI
+        run: |
+          curl -LsSf https://hf.co/cli/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Publish Space to Hugging Face
+        env:
+          HF_OIDC_RESOURCE: spaces/sauravsingla08/MemVanta
+        run: |
+          hf upload spaces/sauravsingla08/MemVanta hf-space . \
+            --commit-message "Sync MemVanta Space from GitHub ${GITHUB_SHA::7}"
