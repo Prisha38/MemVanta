@@ -1,6 +1,7 @@
 # MemVanta
 
 [![Hugging Face Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-FFD21E)](https://huggingface.co/datasets/sauravsingla08/MemVanta-CPU-LLM-Memory-Benchmark)
+[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Live%20Space-FFD21E)](https://huggingface.co/spaces/sauravsingla08/MemVanta)
 
 **Low-memory C++20 LLM inference runtime for quantized GGUF models on CPU.**
 
