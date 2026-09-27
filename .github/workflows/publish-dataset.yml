@@ -1,0 +1,45 @@
+name: Publish MemVanta Hugging Face Dataset
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'results/openllama-7b-v2-ab/**'
+      - 'docs/MEMORY_BENCHMARKING.md'
+      - 'huggingface/build_dataset.py'
+      - '.github/workflows/publish-dataset.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish-dataset:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dataset build dependencies
+        run: python -m pip install --upgrade pandas pyarrow
+
+      - name: Build Hugging Face dataset package
+        run: python huggingface/build_dataset.py
+
+      - name: Install Hugging Face CLI
+        run: |
+          curl -LsSf https://hf.co/cli/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Publish dataset to Hugging Face
+        env:
+          HF_OIDC_RESOURCE: datasets/sauravsingla08/MemVanta-CPU-LLM-Memory-Benchmark
+        run: |
+          hf upload datasets/sauravsingla08/MemVanta-CPU-LLM-Memory-Benchmark hf-dataset . \
+            --commit-message "Sync MemVanta benchmark dataset from GitHub ${GITHUB_SHA::7}"
