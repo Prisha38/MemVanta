@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MemVanta — CPU LLM Memory Benchmark</title>
+  <style>
+    :root{--bg:#0b1020;--panel:#121a2f;--panel2:#0f1629;--text:#eef3ff;--muted:#9fb0ce;--line:#263451;--accent:#7aa2ff;--good:#67d391;--warn:#f1c75b}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#0b1020,#0a0f1c 55%,#080d18);color:var(--text)}
+    a{color:#a9c3ff;text-decoration:none} a:hover{text-decoration:underline}.wrap{max-width:1180px;margin:0 auto;padding:28px 22px 64px}.top{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}.brand{display:flex;gap:12px;align-items:center}.logo{font-size:34px}.brand h1{font-size:22px;margin:0}.links{display:flex;gap:14px;flex-wrap:wrap;font-size:14px}.hero{margin-top:42px;display:grid;grid-template-columns:1.25fr .75fr;gap:22px}.hero h2{font-size:52px;line-height:1.02;margin:0 0 14px;letter-spacing:-1.6px}.hero p{font-size:18px;line-height:1.6;color:var(--muted);max-width:760px}.callout{background:linear-gradient(180deg,#17233e,#111a2e);border:1px solid var(--line);border-radius:18px;padding:20px}.callout .big{font-size:48px;font-weight:800;letter-spacing:-1.8px}.callout small{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px}.card{background:rgba(18,26,47,.88);border:1px solid var(--line);border-radius:16px;padding:18px}.label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.value{font-size:28px;font-weight:750;margin-top:7px}.sub{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.45}.section{margin-top:28px;background:rgba(15,22,41,.9);border:1px solid var(--line);border-radius:18px;padding:22px}.section h3{margin:0 0 16px;font-size:21px}.row{display:grid;grid-template-columns:150px 1fr 90px;gap:12px;align-items:center;margin:12px 0}.bar{height:14px;border-radius:999px;background:#1b2742;overflow:hidden}.fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#719bff,#9a7cff)}.fill.good{background:linear-gradient(90deg,#62d28f,#7be0b2)}.muted{color:var(--muted)}.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}.sliderbox input[type=range]{width:100%}.budget-result{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#0d1425;line-height:1.5}.pill{display:inline-block;padding:3px 8px;border-radius:999px;background:#1a2745;border:1px solid #30446e;font-size:12px}.ok{color:var(--good)}.warn{color:var(--warn)}table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}.foot{margin-top:28px;font-size:13px;color:var(--muted);line-height:1.6}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all}
+    @media(max-width:900px){.hero,.two{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}.hero h2{font-size:40px}}@media(max-width:580px){.grid{grid-template-columns:1fr}.row{grid-template-columns:110px 1fr 72px}.hero h2{font-size:34px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><div class="logo">🧠</div><div><h1>MemVanta</h1><div class="muted">CPU LLM memory benchmark explorer</div></div></div>
+    <div class="links"><a href="https://github.com/sauravsingla/MemVanta" target="_blank">GitHub</a><a href="https://huggingface.co/datasets/sauravsingla08/MemVanta-CPU-LLM-Memory-Benchmark" target="_blank">Dataset</a><a href="https://pypi.org/project/memvanta/" target="_blank">PyPI</a><a href="https://doi.org/10.5281/zenodo.22886357" target="_blank">DOI</a></div>
+  </div>
+
+  <div class="hero">
+    <div>
+      <div class="pill">same-model CPU A/B benchmark</div>
+      <h2>Less resident memory.<br/>Visible throughput trade-off.</h2>
+      <p>Explore MemVanta's canonical OpenLLaMA 7B v2 Q4_0 benchmark against a pinned <code>llama.cpp</code> revision. The page is generated from committed benchmark evidence before publication.</p>
+    </div>
+    <div class="callout"><div class="label">Measured peak-RSS reduction</div><div class="big" id="rssReduction">—</div><small>for this benchmark only</small></div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="label">MemVanta peak RSS</div><div class="value" id="mvRss">—</div><div class="sub">measured process peak resident set</div></div>
+    <div class="card"><div class="label">llama.cpp peak RSS</div><div class="value" id="lcRss">—</div><div class="sub">same GGUF artifact, pinned comparison runtime</div></div>
+    <div class="card"><div class="label">MemVanta prompt</div><div class="value" id="mvPrompt">—</div><div class="sub">tokens / second</div></div>
+    <div class="card"><div class="label">MemVanta generation</div><div class="value" id="mvGen">—</div><div class="sub">tokens / second</div></div>
+  </div>
+
+  <div class="section">
+    <h3>Memory footprint</h3>
+    <div class="row"><div>MemVanta</div><div class="bar"><div id="mvRssBar" class="fill good"></div></div><div id="mvRssBarText">—</div></div>
+    <div class="row"><div>llama.cpp</div><div class="bar"><div id="lcRssBar" class="fill"></div></div><div id="lcRssBarText">—</div></div>
+  </div>
+
+  <div class="section">
+    <h3>Throughput comparison</h3>
+    <div class="two">
+      <div>
+        <div class="label">Prompt processing</div>
+        <div class="row"><div>MemVanta</div><div class="bar"><div id="mvPromptBar" class="fill good"></div></div><div id="mvPromptBarText">—</div></div>
+        <div class="row"><div>llama.cpp</div><div class="bar"><div id="lcPromptBar" class="fill"></div></div><div id="lcPromptBarText">—</div></div>
+      </div>
+      <div>
+        <div class="label">Token generation</div>
+        <div class="row"><div>MemVanta</div><div class="bar"><div id="mvGenBar" class="fill good"></div></div><div id="mvGenBarText">—</div></div>
+        <div class="row"><div>llama.cpp</div><div class="bar"><div id="lcGenBar" class="fill"></div></div><div id="lcGenBarText">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section two">
+    <div class="sliderbox">
+      <h3>Measured-memory budget explorer</h3>
+      <div class="muted">Set a hypothetical RAM budget and compare it with the measured peak RSS values from this run.</div>
+      <input id="budget" type="range" min="3" max="8" step="0.1" value="4" />
+      <div style="margin-top:8px">Budget: <strong id="budgetText">4.0 GiB</strong></div>
+      <div class="budget-result" id="budgetResult"></div>
+    </div>
+    <div>
+      <h3>What the benchmark says</h3>
+      <table><tbody>
+        <tr><th>Memory</th><td id="memorySentence">—</td></tr>
+        <tr><th>Prompt speed</th><td id="promptSentence">—</td></tr>
+        <tr><th>Generation speed</th><td id="genSentence">—</td></tr>
+        <tr><th>Scope</th><td>Specific model, host, workload and pinned runtime revisions.</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Reproducibility evidence</h3>
+    <table><tbody>
+      <tr><th>Benchmark</th><td id="benchmarkName">—</td></tr>
+      <tr><th>Model file</th><td class="mono" id="modelFile">—</td></tr>
+      <tr><th>Model SHA-256</th><td class="mono" id="modelSha">—</td></tr>
+      <tr><th>llama.cpp commit</th><td class="mono" id="llamaCommit">—</td></tr>
+      <tr><th>MemVanta source commit</th><td class="mono" id="mvCommit">—</td></tr>
+      <tr><th>Source artifact</th><td class="mono" id="sourceArtifact">—</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="foot">This is an explanatory static Space. It does not run a 7B model in the browser. Lower measured RSS does not imply faster inference, and these measurements should not be generalized beyond the tested configuration without reproduction.</div>
+</div>
+<script>
+const fmt = (n,d=2)=>Number(n).toFixed(d);
+fetch('./data.json').then(r=>{if(!r.ok) throw new Error('data.json not found'); return r.json()}).then(d=>{
+  const mv=d.memvanta, lc=d.llama_cpp, c=d.comparison;
+  document.getElementById('rssReduction').textContent=fmt(c.rss_reduction_pct)+'%';
+  document.getElementById('mvRss').textContent=fmt(mv.peak_rss_gib)+' GiB';
+  document.getElementById('lcRss').textContent=fmt(lc.peak_rss_gib)+' GiB';
+  document.getElementById('mvPrompt').textContent=fmt(mv.prompt_tps_mean)+' tok/s';
+  document.getElementById('mvGen').textContent=fmt(mv.generation_tps_mean)+' tok/s';
+  const maxR=Math.max(mv.peak_rss_gib,lc.peak_rss_gib); document.getElementById('mvRssBar').style.width=(mv.peak_rss_gib/maxR*100)+'%'; document.getElementById('lcRssBar').style.width=(lc.peak_rss_gib/maxR*100)+'%';
+  document.getElementById('mvRssBarText').textContent=fmt(mv.peak_rss_gib)+' GiB'; document.getElementById('lcRssBarText').textContent=fmt(lc.peak_rss_gib)+' GiB';
+  const maxP=Math.max(mv.prompt_tps_mean,lc.prompt_tps_mean); document.getElementById('mvPromptBar').style.width=(mv.prompt_tps_mean/maxP*100)+'%'; document.getElementById('lcPromptBar').style.width=(lc.prompt_tps_mean/maxP*100)+'%'; document.getElementById('mvPromptBarText').textContent=fmt(mv.prompt_tps_mean); document.getElementById('lcPromptBarText').textContent=fmt(lc.prompt_tps_mean);
+  const maxG=Math.max(mv.generation_tps_mean,lc.generation_tps_mean); document.getElementById('mvGenBar').style.width=(mv.generation_tps_mean/maxG*100)+'%'; document.getElementById('lcGenBar').style.width=(lc.generation_tps_mean/maxG*100)+'%'; document.getElementById('mvGenBarText').textContent=fmt(mv.generation_tps_mean); document.getElementById('lcGenBarText').textContent=fmt(lc.generation_tps_mean);
+  document.getElementById('memorySentence').textContent=`MemVanta measured ${fmt(c.rss_reduction_pct)}% lower peak RSS.`;
+  document.getElementById('promptSentence').textContent=`llama.cpp was ${fmt(c.llama_vs_memvanta_prompt_speedup)}× faster in prompt processing.`;
+  document.getElementById('genSentence').textContent=`llama.cpp was ${fmt(c.llama_vs_memvanta_generation_speedup)}× faster in token generation.`;
+  document.getElementById('benchmarkName').textContent=d.benchmark; document.getElementById('modelFile').textContent=d.model.file; document.getElementById('modelSha').textContent=d.model.sha256; document.getElementById('llamaCommit').textContent=lc.commit; document.getElementById('mvCommit').textContent=d.provenance.memvanta_source_commit; document.getElementById('sourceArtifact').textContent=d.provenance.source_artifact;
+  const budget=document.getElementById('budget'), bt=document.getElementById('budgetText'), br=document.getElementById('budgetResult');
+  const render=()=>{const b=Number(budget.value); bt.textContent=fmt(b,1)+' GiB'; const mvFit=mv.peak_rss_gib<=b, lcFit=lc.peak_rss_gib<=b; br.innerHTML=`MemVanta: <strong class="${mvFit?'ok':'warn'}">${mvFit?'within':'above'} measured budget</strong><br>llama.cpp: <strong class="${lcFit?'ok':'warn'}">${lcFit?'within':'above'} measured budget</strong><div class="muted" style="margin-top:8px">This compares only against measured peak RSS; it is not a physical-RAM guarantee.</div>`}; budget.addEventListener('input',render); render();
+}).catch(e=>{document.querySelector('.foot').textContent='Benchmark data could not be loaded: '+e.message});
+</script>
+</body>
+</html>
