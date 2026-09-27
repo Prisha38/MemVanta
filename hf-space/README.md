@@ -16,6 +16,8 @@ Interactive browser-only explorer for MemVanta's canonical OpenLLaMA 7B v2 Q4_0 
 
 The evidence payload is generated directly from committed benchmark artifacts before each publish. The Space visualizes peak RSS, prompt-processing throughput, token-generation throughput, reproducibility metadata, and the measured memory/throughput trade-off.
 
+Relevant Space and benchmark-evidence changes on `main` are synchronized automatically through Hugging Face Trusted Publishing.
+
 This Space does **not** run the 7B model in the browser and does not claim the measured result generalizes to every model, CPU, workload, runtime revision, or memory configuration.
 
 - Source: https://github.com/sauravsingla/MemVanta
