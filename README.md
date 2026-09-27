@@ -1,5 +1,7 @@
 # MemVanta
 
+[![Hugging Face Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Dataset-FFD21E)](https://huggingface.co/datasets/sauravsingla08/MemVanta-CPU-LLM-Memory-Benchmark)
+
 **Low-memory C++20 LLM inference runtime for quantized GGUF models on CPU.**
 
 MemVanta is a memory-first local LLM runtime for running quantized Llama-family GGUF models on CPUs with limited RAM. It uses mmap-backed model access, paged KV cache, Q4/Q8 kernels, and bounded adaptive prefetching, with reproducible memory and throughput benchmarks against pinned `llama.cpp`.
