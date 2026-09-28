@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import html
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results" / "openllama-7b-v2-ab"
 OUT = ROOT / "hf-space" / "data.json"
+INDEX = ROOT / "hf-space" / "index.html"
 
 
 def _read_text(name: str) -> str:
@@ -23,6 +26,68 @@ def _source_commit() -> str:
         ).strip()
     except (OSError, subprocess.CalledProcessError):
         return "unknown"
+
+
+def _replace_element_text(document: str, element_id: str, value: str) -> str:
+    """Replace the initial text node for a simple element identified by id.
+
+    The Space still hydrates from data.json in JavaScript. Pre-rendering the same
+    canonical values here makes benchmark evidence visible to crawlers, link
+    previewers, accessibility tools, and browsers before JavaScript executes.
+    """
+    pattern = re.compile(
+        rf'(<[^>]+\bid=["\']{re.escape(element_id)}["\'][^>]*>)(.*?)(</[^>]+>)',
+        flags=re.DOTALL,
+    )
+    escaped = html.escape(value, quote=False)
+    rendered, count = pattern.subn(rf"\g<1>{escaped}\g<3>", document, count=1)
+    if count != 1:
+        raise RuntimeError(f"Could not pre-render element #{element_id}")
+    return rendered
+
+
+def _render_index(payload: dict) -> None:
+    document = INDEX.read_text(encoding="utf-8")
+    mv = payload["memvanta"]
+    lc = payload["llama_cpp"]
+    comparison = payload["comparison"]
+    provenance = payload["provenance"]
+
+    values = {
+        "rssReduction": f"{comparison['rss_reduction_pct']:.2f}%",
+        "mvRss": f"{mv['peak_rss_gib']:.2f} GiB",
+        "lcRss": f"{lc['peak_rss_gib']:.2f} GiB",
+        "mvPrompt": f"{mv['prompt_tps_mean']:.2f} tok/s",
+        "mvGen": f"{mv['generation_tps_mean']:.2f} tok/s",
+        "mvRssBarText": f"{mv['peak_rss_gib']:.2f} GiB",
+        "lcRssBarText": f"{lc['peak_rss_gib']:.2f} GiB",
+        "mvPromptBarText": f"{mv['prompt_tps_mean']:.2f}",
+        "lcPromptBarText": f"{lc['prompt_tps_mean']:.2f}",
+        "mvGenBarText": f"{mv['generation_tps_mean']:.2f}",
+        "lcGenBarText": f"{lc['generation_tps_mean']:.2f}",
+        "memorySentence": (
+            f"MemVanta measured {comparison['rss_reduction_pct']:.2f}% lower peak RSS."
+        ),
+        "promptSentence": (
+            f"llama.cpp was {comparison['llama_vs_memvanta_prompt_speedup']:.2f}× "
+            "faster in prompt processing."
+        ),
+        "genSentence": (
+            f"llama.cpp was {comparison['llama_vs_memvanta_generation_speedup']:.2f}× "
+            "faster in token generation."
+        ),
+        "benchmarkName": str(payload["benchmark"]),
+        "modelFile": str(payload["model"]["file"]),
+        "modelSha": str(payload["model"]["sha256"]),
+        "llamaCommit": str(lc["commit"]),
+        "mvCommit": str(provenance["memvanta_source_commit"]),
+        "sourceArtifact": str(provenance["source_artifact"]),
+    }
+
+    for element_id, value in values.items():
+        document = _replace_element_text(document, element_id, value)
+
+    INDEX.write_text(document, encoding="utf-8")
 
 
 def main() -> None:
@@ -79,7 +144,9 @@ def main() -> None:
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    _render_index(payload)
     print(f"Wrote {OUT.relative_to(ROOT)}")
+    print(f"Pre-rendered benchmark evidence into {INDEX.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
