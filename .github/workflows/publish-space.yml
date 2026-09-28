@@ -26,8 +26,34 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Build Space evidence payload
+      - name: Build Space evidence payload and static HTML
         run: python huggingface/build_space.py
+
+      - name: Validate crawler-visible benchmark evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s hf-space/data.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path("hf-space/data.json").read_text(encoding="utf-8"))
+          page = Path("hf-space/index.html").read_text(encoding="utf-8")
+          expected = [
+              f"{payload['comparison']['rss_reduction_pct']:.2f}%",
+              f"{payload['memvanta']['peak_rss_gib']:.2f} GiB",
+              f"{payload['llama_cpp']['peak_rss_gib']:.2f} GiB",
+              f"{payload['memvanta']['prompt_tps_mean']:.2f} tok/s",
+              f"{payload['memvanta']['generation_tps_mean']:.2f} tok/s",
+              payload['model']['sha256'],
+              payload['llama_cpp']['commit'],
+          ]
+          missing = [value for value in expected if value not in page]
+          if missing:
+              raise SystemExit(f"Static Space is missing pre-rendered evidence: {missing}")
+          print("Validated crawler-visible MemVanta benchmark evidence")
+          PY
 
       - name: Install Hugging Face CLI
         run: |
