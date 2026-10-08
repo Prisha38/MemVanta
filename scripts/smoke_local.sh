@@ -9,7 +9,7 @@ cmake -S "${ROOT_DIR}" -B "${BUILD_DIR}" \
   -DCMAKE_BUILD_TYPE=Release
 
 echo "==> Building MemVanta..."
-cmake --build "${BUILD_DIR}" --target memvanta memvanta_gguf_inspect -j2
+cmake --build "${BUILD_DIR}" --target memvanta memvanta_gguf_inspect memvanta_tests -j2
 
 echo "==> Running tests..."
 ctest --test-dir "${BUILD_DIR}" --output-on-failure
