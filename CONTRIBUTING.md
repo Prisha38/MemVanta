@@ -19,6 +19,26 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ctest --test-dir build --output-on-failure
 ```
+## Platform / validation matrix
+
+The current CI validates the following platforms and configurations:
+
+| Platform / configuration | Validation |
+| --- | --- |
+| Linux | Native build and test in Release and Debug modes |
+| Linux portable | Portable build and test with runtime dispatch |
+| ARM64 | Cross-build with ARMv8 SIMD and emulated tests under QEMU |
+| macOS | Native build and test with Clang |
+| Linux + ASan/UBSan | Build and test under AddressSanitizer and UndefinedBehaviorSanitizer |
+| Linux + TSan | Build and test under ThreadSanitizer |
+
+See the CI workflow:
+https://github.com/sauravsingla/MemVanta/blob/main/.github/workflows/ci.yml
+
+Full-model correctness is additionally validated on Linux:
+https://github.com/sauravsingla/MemVanta/blob/main/.github/workflows/full-model-correctness.yml
+
+This matrix describes what CI currently exercises; it does not imply support for platforms or configurations that are not listed.
 
 ## Pull requests
 
